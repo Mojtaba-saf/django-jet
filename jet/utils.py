@@ -2,6 +2,7 @@ import datetime
 import json
 from django.template import Context
 from django.utils import translation
+
 from jet import settings
 from jet.models import PinnedApplication
 
@@ -9,20 +10,22 @@ try:
     from django.apps.registry import apps
 except ImportError:
     try:
-        from django.apps import apps # Fix Django 1.7 import issue
+        from django.apps import apps  # Fix Django 1.7 import issue
     except ImportError:
         pass
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
+
 try:
     from django.core.urlresolvers import reverse, resolve, NoReverseMatch
-except ImportError: # Django 1.11
+except ImportError:  # Django 1.11
     from django.urls import reverse, resolve, NoReverseMatch
 
 from django.contrib.admin import AdminSite
+
 try:
     from django.utils.encoding import smart_text as smart_txt
-except ImportError: # Django 2&3+
+except ImportError:  # Django 2&3+
     '''
     "The smart_text() and force_text() aliases (since Django 2.0) of 
     smart_str() and force_str() are deprecated...".
@@ -33,16 +36,18 @@ except ImportError: # Django 2&3+
     from django.utils.encoding import smart_str as smart_txt
 from django.utils.text import capfirst
 from django.contrib import messages
+
 try:
     from django.utils.encoding import force_text as force_txt
-except ImportError: # Django 2&3+ Same as above
+except ImportError:  # Django 2&3+ Same as above
     from django.utils.encoding import force_str as force_txt
 from django.utils.functional import Promise
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.contrib import admin
+
 try:
     from django.utils.translation import ugettext_lazy as _
-except ImportError: # Django 4 (tested with Django 4.0)
+except ImportError:  # Django 4 (tested with Django 4.0)
     from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
 
@@ -67,7 +72,7 @@ class JsonResponse(HttpResponse):
     def __init__(self, data, encoder=DjangoJSONEncoder, safe=True, **kwargs):
         if safe and not isinstance(data, dict):
             raise TypeError('In order to allow non-dict objects to be '
-                'serialized set the safe parameter to False')
+                            'serialized set the safe parameter to False')
         kwargs.setdefault('content_type', 'application/json')
         data = json.dumps(data, cls=encoder)
         super(JsonResponse, self).__init__(content=data, **kwargs)
@@ -83,7 +88,7 @@ def get_app_list(context, order=True):
         try:
             has_module_perms = model_admin.has_module_permission(request)
         except AttributeError:
-            has_module_perms = request.user.has_module_perms(app_label) # Fix Django < 1.8 issue
+            has_module_perms = request.user.has_module_perms(app_label)  # Fix Django < 1.8 issue
 
         if has_module_perms:
             perms = model_admin.get_model_perms(request)
@@ -166,15 +171,15 @@ class LazyDateTimeEncoder(json.JSONEncoder):
         if isinstance(obj, datetime.datetime) or isinstance(obj, datetime.date):
             return obj.isoformat()
         elif isinstance(obj, Promise):
-            #return force_text(obj)
-            return force_txt(obj)   # Django 2&3+
+            # return force_text(obj)
+            return force_txt(obj)  # Django 2&3+
         return self.encode(obj)
 
 
 def get_model_instance_label(instance):
     if getattr(instance, "related_label", None):
         return instance.related_label()
-    #return smart_text(instance)    # Django 3+
+    # return smart_text(instance)    # Django 3+
     return smart_txt(instance)
 
 
@@ -241,7 +246,7 @@ def get_model_queryset(admin_site, model, request, preserved_filters=None):
         request, model, list_display, list_display_links, list_filter,
         model_admin.date_hierarchy, search_fields, list_select_related,
         model_admin.list_per_page, model_admin.list_max_show_all,
-        model_admin.list_editable, model_admin]
+        model_admin.list_editable, model_admin.search_help_text, model_admin]
 
     try:
         sortable_by = model_admin.get_sortable_by(request)
@@ -447,6 +452,7 @@ def get_menu_items(context):
         def map_item(item):
             item['items'] = item['models']
             return item
+
         app_list = list(map(map_item, original_app_list.values()))
 
     current_found = False
